@@ -1,0 +1,79 @@
+<!--
+  init params:
+    equation:          string  default "x + 5 = 8"  can change on re-init
+    targetOperations:  number  default null (omit to hide counter)  can change on re-init
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="algebra1_test">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="manifest" href="manifest.json">
+  <title>algebra1_test</title>
+
+  <style>
+    body { margin: 0; touch-action: none; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <script>
+  // DEV-ONLY mock — real iOS host injects window.GameEngine before this runs.
+  (function () {
+    if (window.GameEngine) return;
+
+    const handlers = [];
+    window.GameEngine = {
+      send: function (msg) {
+        console.log('[mock] game → app', msg);
+        if (msg.type === 'completed') document.title = '✅ completed';
+        if (msg.type === 'gameOver')  document.title = '💀 gameOver';
+        if (msg.type === 'error')     document.title = '⚠️ ' + msg.message;
+      },
+      onMessage: function (cb) { handlers.push(cb); }
+    };
+
+    function dispatch(msg) {
+      console.log('[mock] app → game', msg);
+      handlers.forEach(function (h) { try { h(msg); } catch (e) { console.error(e); } });
+    }
+
+    window.MockHost = {
+      init:   function (p) { dispatch(Object.assign({ type: 'init' }, p || {})); },
+      pause:  function ()  { dispatch({ type: 'pause' }); },
+      resume: function ()  { dispatch({ type: 'resume' }); }
+    };
+
+    // Auto-init when the game sends ready, just like the real host does.
+    const _send = window.GameEngine.send;
+    window.GameEngine.send = function (msg) {
+      _send(msg);
+      if (msg && msg.type === 'ready') {
+        setTimeout(function () {
+          window.MockHost.init({ equation: 'x + 5 = 8', targetOperations: 3 });
+        }, 50);
+      }
+    };
+
+    // Keyboard shortcuts: P = pause, R = resume, I = re-init
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'p' || e.key === 'P') window.MockHost.pause();
+      if (e.key === 'r' || e.key === 'R') window.MockHost.resume();
+      if (e.key === 'i' || e.key === 'I') window.MockHost.init({ equation: '2x + 3 = 11' });
+    });
+  })();
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
