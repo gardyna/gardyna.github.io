@@ -6,7 +6,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base href="/Algebra/">
+  <base href="/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -55,12 +55,17 @@
     };
 
     // Auto-init when the game sends ready, just like the real host does.
+    // Reads URL query params so you can test with ?equation=2x+3=11&targetOperations=4
     const _send = window.GameEngine.send;
     window.GameEngine.send = function (msg) {
       _send(msg);
       if (msg && msg.type === 'ready') {
+        const p = Object.fromEntries(new URLSearchParams(window.location.search));
         setTimeout(function () {
-          window.MockHost.init({ equation: 'x + 5 = 8', targetOperations: 3 });
+          window.MockHost.init({
+            equation: p.equation || 'x + 5 = 8',
+            targetOperations: p.targetOperations ? Number(p.targetOperations) : 3
+          });
         }, 50);
       }
     };
